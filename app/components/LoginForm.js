@@ -15,9 +15,15 @@ const LoginForm = ({ onLogin }) => {
       return;
     }
 
+    // If parent provided an onLogin handler, pass credentials to it
+    if (onLogin) {
+      onLogin(username, password);
+      return;
+    }
+
+    // Fallback demo logic when no onLogin provided
     if (username === 'kaizerklent.auceran@hcdc.edu.ph' && password === 'kaizer1234') {
       console.log('Login successful!');
-      if (onLogin) onLogin();
     } else {
       console.log('Invalid username or password');
     }

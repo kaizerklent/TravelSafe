@@ -1,6 +1,7 @@
 // Settings.js
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, ScrollView, Switch, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import CustomHeader from '../components/CustomHeader';
@@ -80,7 +81,7 @@ const Settings = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {/* Custom Header */}
       <CustomHeader
         title="Settings"
@@ -265,7 +266,7 @@ const Settings = ({ navigation }) => {
           <Text style={styles.versionText}>TravelShare v1.0.0</Text>
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 

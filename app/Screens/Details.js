@@ -1,12 +1,13 @@
 // Details.js
 import React from 'react';
 import { View, Image, Text, StyleSheet, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import CustomHeader from '../components/CustomHeader';
 import CustomButton from '../components/Button';
 
 const Details = ({ navigation }) => {
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {/* Custom Header */}
       <CustomHeader
         title="About App"
@@ -95,7 +96,7 @@ const Details = ({ navigation }) => {
           />
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 

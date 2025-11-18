@@ -1,13 +1,13 @@
 // Profile.js
 import React from 'react';
 import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import CustomHeader from '../components/CustomHeader';
 
 const Profile = ({ navigation }) => {
   return (
-    
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {/* Custom Header */}
       <CustomHeader
         title="Profile"
@@ -126,7 +126,7 @@ const Profile = ({ navigation }) => {
           </View>
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 
