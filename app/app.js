@@ -2,9 +2,7 @@
 import { LogBox } from 'react-native';
 
 import * as React from 'react';
-import { TouchableOpacity, Image } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-
 import { createDrawerNavigator } from '@react-navigation/drawer';
 
 // Screens
@@ -15,6 +13,7 @@ import Profile from './Screens/Profile';
 import Details from './Screens/Details';
 import Settings from './Screens/Settings';
 import AddPost from './Screens/AddPost';
+import EditPostScreen from './Screens/EditPostScreen';
 import PostDetailScreen from './Screens/PostDetailScreen';
 
 // Components
@@ -37,6 +36,7 @@ export default function App() {
         <Stack.Screen name="CreateAccScreen" component={CreateAccScreen} />
         <Stack.Screen name="Main" component={DrawerNavigator} />
         <Stack.Screen name="AddPost" component={AddPost} />
+        <Stack.Screen name="EditPost" component={EditPostScreen} />
         <Stack.Screen name="PostDetail" component={PostDetailScreen} />
       </Stack.Navigator>
     </PostProvider>

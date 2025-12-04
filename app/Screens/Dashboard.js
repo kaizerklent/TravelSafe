@@ -1,5 +1,5 @@
 // Dashboard.js
-import React, { useContext, useState } from 'react';
+import React, { useEffect, useState, useContext } from "react";
 import {
   View,
   Text,
@@ -10,122 +10,206 @@ import {
   Modal,
   Pressable,
   Share,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { PostContext } from '../Context/PostContext';
-import CustomHeader from '../components/CustomHeader';
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+import { db, auth } from "../firebase";
+import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
+
+import CustomHeader from "../components/CustomHeader";
+import { PostContext } from "../Context/PostContext";
 
 const Dashboard = ({ navigation }) => {
-  const { posts, toggleFavorite, toggleLike } = useContext(PostContext);
+  const [posts, setPosts] = useState([]);
   const [visibleImage, setVisibleImage] = useState(null);
 
+  // ⭐ Keep all context actions
+  const { toggleFavorite, toggleLike, deletePost } = useContext(PostContext);
+
+  // ⭐ LIVE Firestore fetch
+  useEffect(() => {
+    const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const list = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setPosts(list);
+    });
+
+    return unsubscribe;
+  }, []);
+
+  // ⭐ Convert Firestore timestamp to "2h ago"
+  const timeAgo = (timestamp) => {
+    if (!timestamp) return "Just now";
+    const date = timestamp.toDate();
+
+    const seconds = Math.floor((new Date() - date) / 1000);
+    const intervals = {
+      year: 31536000,
+      month: 2592000,
+      week: 604800,
+      day: 86400,
+      hour: 3600,
+      minute: 60,
+    };
+
+    for (const [unit, value] of Object.entries(intervals)) {
+      const count = Math.floor(seconds / value);
+      if (count > 0) return `${count} ${unit}${count > 1 ? "s" : ""} ago`;
+    }
+
+    return "Just now";
+  };
+
+  // ⭐ Share a post
   const handleShare = async (item) => {
     try {
       await Share.share({
         message: `Check out ${item.place} in ${item.location}! ⭐${item.rating}/5\n"${item.comment}"`,
       });
     } catch (error) {
-      console.log('Error sharing:', error);
+      console.log("Share error:", error);
     }
   };
 
-  // Add Post button component for header
+  // ⭐ Header Add Button
   const HeaderRight = () => (
     <TouchableOpacity
-      onPress={() => navigation.navigate('AddPost')}
+      onPress={() => navigation.navigate("AddPost")}
       style={styles.headerButton}
     >
       <Ionicons name="add" size={24} color="#22668D" />
     </TouchableOpacity>
   );
 
+  // ⭐ RENDER POST CARD
   const renderPost = ({ item }) => {
-    const imageSource = typeof item.image === 'number' ? item.image : { uri: item.image };
+    const isOwner = auth?.currentUser?.uid === item.userId;
+
+    const imageSource =
+      item.image && typeof item.image === "string"
+        ? { uri: item.image }
+        : item.image;
 
     return (
       <View style={styles.postCard}>
-        {/* Image with proper touch area */}
-        <TouchableOpacity 
-          onPress={() => setVisibleImage(imageSource)} 
-          style={styles.imageContainer}
-        >
-          {item.image && <Image source={imageSource} style={styles.postImage} />}
+        {/* 🔹 USER HEADER */}
+        <View style={styles.userHeader}>
+          <Image
+            source={
+              item.profilePic
+                ? { uri: item.profilePic }
+                : { uri: "https://i.pravatar.cc/150?img=1" } // fallback
+            }
+            style={styles.userPic}
+          />
 
-          <View style={styles.imageOverlay}>
-            <Ionicons name="expand" size={24} color="white" />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.usernameText}>{item.username}</Text>
+            <Text style={styles.timeText}>{timeAgo(item.createdAt)}</Text>
           </View>
-        </TouchableOpacity>
 
-        <View style={styles.postHeader}>
-          <Text style={styles.postPlace}>{item.place}</Text>
-          <TouchableOpacity onPress={() => toggleFavorite(item.id)}>
-            <Ionicons
-              name={item.favorite ? 'heart' : 'heart-outline'}
-              size={26}
-              color={item.favorite ? 'red' : '#888'}
-            />
-          </TouchableOpacity>
+          {/* 🔹 EDIT + DELETE BUTTONS FOR OWNER */}
+          {isOwner && (
+            <View style={styles.ownerActions}>
+              <TouchableOpacity
+                onPress={() =>
+                  navigation.navigate("EditPost", { post: item })
+                }
+              >
+                <Ionicons name="create-outline" size={20} color="#22668D" />
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={() => deletePost(item.id)}>
+                <Ionicons
+                  name="trash-outline"
+                  size={20}
+                  color="red"
+                  style={{ marginLeft: 10 }}
+                />
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
 
+        {/* 🔹 POST IMAGE */}
+        <TouchableOpacity onPress={() => setVisibleImage(imageSource)}>
+          {imageSource && <Image source={imageSource} style={styles.postImage} />}
+        </TouchableOpacity>
+
+        {/* 🔹 POST CONTENT */}
+        <Text style={styles.postPlace}>{item.place}</Text>
         <Text style={styles.postLocation}>📍 {item.location}</Text>
         <Text style={styles.postRating}>⭐ {item.rating}/5</Text>
         <Text style={styles.postComment}>{item.comment}</Text>
 
+        {/* 🔹 LIKE / FAVORITE / COMMENT / SHARE */}
         <View style={styles.actionRow}>
-          <TouchableOpacity onPress={() => toggleLike(item.id)} style={styles.iconButton}>
-            <Ionicons
-              name={item.liked ? 'thumbs-up' : 'thumbs-up-outline'}
-              size={22}
-              color={item.liked ? '#22668D' : '#555'}
-            />
-            <Text style={styles.actionText}>
-              {item.likes || 0} Like{item.likes !== 1 ? 's' : ''}
-            </Text>
-          </TouchableOpacity>
+        {/* LIKE */}
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={() => toggleLike(item.id)}
+        >
+          <Ionicons
+            name={item.liked ? "thumbs-up" : "thumbs-up-outline"}
+            size={20}
+            color={item.liked ? "#22668D" : "#555"}
+          />
+          <Text style={styles.actionText}>{item.likes} Likes</Text>
+        </TouchableOpacity>
 
-          <TouchableOpacity
-            onPress={() => navigation.navigate('PostDetail', { postId: item.id })}
-            style={styles.iconButton}
-          >
-            <Ionicons name="chatbubble-outline" size={22} color="#555" />
-            <Text style={styles.actionText}>
-              {item.comments?.length || 0} Comment{item.comments?.length !== 1 ? 's' : ''}
-            </Text>
-          </TouchableOpacity>
+        {/* FAVORITE */}
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={() => toggleFavorite(item.id)}
+        >
+          <Ionicons
+            name={item.favorite ? "heart" : "heart-outline"}
+            size={20}
+            color={item.favorite ? "red" : "#555"}
+          />
+          <Text style={styles.actionText}>{item.favorites || 0} Favorites</Text>
+        </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => handleShare(item)} style={styles.iconButton}>
-            <Ionicons name="share-social-outline" size={22} color="#555" />
-            <Text style={styles.actionText}>Share</Text>
-          </TouchableOpacity>
-        </View>
+        {/* COMMENTS */}
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={() => navigation.navigate("PostDetail", { postId: item.id })}
+        >
+          <Ionicons name="chatbubble-outline" size={20} color="#555" />
+          <Text style={styles.actionText}>
+            {item.commentsCount || 0} Comments
+          </Text>
+        </TouchableOpacity>
       </View>
-    );
-  };
+
+            </View>
+          );
+        };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
+    <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        {/* Custom Header */}
+        {/* HEADER */}
         <CustomHeader
           title="Dashboard"
           onMenuPress={() => navigation.toggleDrawer()}
           rightComponent={<HeaderRight />}
         />
 
-        {/* Main Content with proper spacing */}
+        {/* LIST OF POSTS */}
         <View style={styles.content}>
           {posts.length === 0 ? (
             <View style={styles.emptyContainer}>
               <Ionicons name="images-outline" size={60} color="#CCC" />
               <Text style={styles.emptyText}>No posts yet.</Text>
-              <Text style={styles.emptySubText}>Be the first to share a place!</Text>
-              <TouchableOpacity 
-                style={styles.addFirstPostButton}
-                onPress={() => navigation.navigate('AddPost')}
-              >
-                <Text style={styles.addFirstPostText}>Add Your First Post</Text>
-              </TouchableOpacity>
+              <Text style={styles.emptySubText}>
+                Be the first to share a place!
+              </Text>
             </View>
           ) : (
             <FlatList
@@ -133,24 +217,31 @@ const Dashboard = ({ navigation }) => {
               keyExtractor={(item) => item.id}
               renderItem={renderPost}
               contentContainerStyle={styles.postList}
-              showsVerticalScrollIndicator={false}
             />
           )}
         </View>
 
-        {/* Image Zoom Modal */}
-        <Modal 
-          visible={!!visibleImage} 
-          transparent={true} 
-          onRequestClose={() => setVisibleImage(null)}
+        {/* 🔍 IMAGE ZOOM MODAL */}
+        <Modal
+          visible={!!visibleImage}
+          transparent
           animationType="fade"
+          onRequestClose={() => setVisibleImage(null)}
         >
           <View style={styles.modalContainer}>
-            <Pressable style={styles.modalClose} onPress={() => setVisibleImage(null)}>
+            <Pressable
+              style={styles.modalClose}
+              onPress={() => setVisibleImage(null)}
+            >
               <Ionicons name="close" size={28} color="#fff" />
             </Pressable>
+
             {visibleImage && (
-              <Image source={visibleImage} style={styles.fullImage} resizeMode="contain" />
+              <Image
+                source={visibleImage}
+                style={styles.fullImage}
+                resizeMode="contain"
+              />
             )}
           </View>
         </Modal>
@@ -159,14 +250,16 @@ const Dashboard = ({ navigation }) => {
   );
 };
 
+/* ------------------ STYLES ------------------ */
+
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFADD',
+    backgroundColor: "#FFFADD",
   },
   container: {
     flex: 1,
-    backgroundColor: '#FFFADD',
+    backgroundColor: "#FFFADD",
   },
   content: {
     flex: 1,
@@ -179,128 +272,123 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     paddingBottom: 30,
   },
+
+  /* EMPTY STATE */
   emptyContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
+    justifyContent: "center",
+    alignItems: "center",
   },
   emptyText: {
-    textAlign: 'center',
-    color: '#666',
-    marginTop: 10,
+    color: "#666",
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
+    marginTop: 10,
   },
   emptySubText: {
-    textAlign: 'center',
-    color: '#888',
-    marginTop: 5,
+    color: "#888",
     fontSize: 14,
-    marginBottom: 20,
+    marginTop: 5,
   },
-  addFirstPostButton: {
-    backgroundColor: '#22668D',
-    paddingHorizontal: 25,
-    paddingVertical: 12,
-    borderRadius: 10,
-  },
-  addFirstPostText: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
+
+  /* POST CARD */
   postCard: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 12,
     padding: 15,
     marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
     elevation: 3,
   },
-  imageContainer: {
-    position: 'relative',
+
+  /* USER HEADER */
+  userHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
   },
+  userPic: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 10,
+  },
+  usernameText: {
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  timeText: {
+    fontSize: 12,
+    color: "#666",
+  },
+  ownerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  /* IMAGE */
   postImage: {
-    width: '100%',
+    width: "100%",
     height: 200,
     borderRadius: 10,
+    marginBottom: 10,
   },
-  imageOverlay: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    borderRadius: 15,
-    padding: 6,
-  },
-  postHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 10,
-  },
+
+  /* POST DETAILS */
   postPlace: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: "bold",
+    marginTop: 5,
+    color: "#333",
   },
   postLocation: {
-    fontSize: 14,
-    color: '#555',
-    marginTop: 4,
+    color: "#666",
+    marginTop: 2,
   },
   postRating: {
-    fontSize: 14,
-    color: '#FFA500',
-    marginTop: 4,
+    marginTop: 2,
+    color: "#FFA500",
   },
   postComment: {
-    fontSize: 14,
-    color: '#555',
     marginTop: 6,
     lineHeight: 18,
+    color: "#555",
   },
+
+  /* ACTIONS */
   actionRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
     paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: "#EEE",
   },
   iconButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 5,
-    paddingHorizontal: 8,
+    flexDirection: "row",
+    alignItems: "center",
   },
   actionText: {
-    marginLeft: 5,
-    color: '#555',
-    fontSize: 14,
+    marginLeft: 6,
+    color: "#555",
   },
+
+  /* IMAGE MODAL */
   modalContainer: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.95)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  fullImage: {
-    width: '95%',
-    height: '80%',
+    backgroundColor: "rgba(0,0,0,0.95)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   modalClose: {
-    position: 'absolute',
+    position: "absolute",
     top: 40,
     right: 20,
-    zIndex: 10,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    borderRadius: 20,
+    zIndex: 50,
     padding: 8,
+  },
+  fullImage: {
+    width: "95%",
+    height: "80%",
   },
 });
 
