@@ -128,6 +128,7 @@ const LoginScreen = ({ navigation, route }) => {
             <TextInput
               style={styles.modalInput}
               placeholder="Enter your email"
+              placeholderTextColor="#888"
               value={resetEmail}
               onChangeText={setResetEmail}
               keyboardType="email-address"
@@ -219,6 +220,7 @@ const styles = StyleSheet.create({
   modalInput: {
     borderWidth: 1,
     borderColor: "#ccc",
+    color: "black",
     padding: 10,
     borderRadius: 8,
     marginBottom: 15,

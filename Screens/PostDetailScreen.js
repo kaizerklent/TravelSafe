@@ -44,7 +44,7 @@ export default function PostDetailScreen({ route }) {
     };
 
     fetchPost();
-  }, []);
+  }, [ postId ]);
 
   // Load comments (real-time)
   useEffect(() => {
@@ -59,7 +59,7 @@ export default function PostDetailScreen({ route }) {
     });
 
     return unsub;
-  }, []);
+  }, [ postId ]);
 
   // Load user profile for comments
   const [userProfile, setUserProfile] = useState(null);

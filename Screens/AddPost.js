@@ -1,4 +1,4 @@
-// AddPost.js
+//AddPost.js
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -8,7 +8,9 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
+  ScrollView
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import * as ImagePicker from "expo-image-picker";
 import { auth, db } from "../firebase";
@@ -29,7 +31,6 @@ const AddPost = ({ navigation }) => {
 
   const [userProfile, setUserProfile] = useState(null);
 
-  // ✅ Load user info (username + profilePic)
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
@@ -41,11 +42,9 @@ const AddPost = ({ navigation }) => {
         console.log("User fetch error:", e);
       }
     };
-
     fetchUserProfile();
   }, []);
 
-  // ✅ Pick image (expo-image-picker v17+)
   const pickImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
@@ -65,35 +64,25 @@ const AddPost = ({ navigation }) => {
     }
   };
 
-  // ✅ Save Post to Firestore
   const handlePost = async () => {
     if (!place || !location || !rating || !comment) {
       return Alert.alert("Missing info", "Please fill all fields.");
     }
 
-    if (!auth.currentUser) {
-      return Alert.alert("Error", "You must be logged in.");
-    }
-
     try {
       await addDoc(collection(db, "posts"), {
         userId: auth.currentUser.uid,
-
-        // user identity
         username: userProfile?.username || "Unknown",
         profilePic: userProfile?.profilePic || null,
 
-        // post content
         place,
         location,
         rating: Number(rating),
         comment,
-        image, // local URI
+        image,
 
-        // initial values
         likes: 0,
         favorites: 0,
-
         createdAt: serverTimestamp(),
       });
 
@@ -106,64 +95,65 @@ const AddPost = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Add a New Place</Text>
+    <SafeAreaView style={styles.safe}>
+      <ScrollView contentContainerStyle={styles.container}>
+        
+        <Text style={styles.title}>Add a New Place</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Place name"
-        value={place}
-        onChangeText={setPlace}
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="Place name"
+          placeholderTextColor="#888"
+          value={place}
+          onChangeText={setPlace}
+        />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Location (e.g. Bohol, Philippines)"
-        value={location}
-        onChangeText={setLocation}
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="Location (e.g. Bohol, Philippines)"
+          placeholderTextColor="#888"
+          value={location}
+          onChangeText={setLocation}
+        />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Rating (1–5)"
-        value={rating}
-        onChangeText={setRating}
-        keyboardType="numeric"
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="Rating (1–5)"
+          placeholderTextColor="#888"
+          value={rating}
+          onChangeText={setRating}
+          keyboardType="numeric"
+        />
 
-      <TextInput
-        style={[styles.input, { height: 100 }]}
-        placeholder="Write your comment..."
-        value={comment}
-        onChangeText={setComment}
-        multiline
-      />
+        <TextInput
+          style={[styles.input, { height: 100 }]}
+          placeholder="Write your comment..."
+          placeholderTextColor="#888"
+          value={comment}
+          onChangeText={setComment}
+          multiline
+        />
 
-      <TouchableOpacity style={styles.imageButton} onPress={pickImage}>
-        <Text style={styles.imageButtonText}>
-          {image ? "Change Image" : "Add Image"}
-        </Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.imageButton} onPress={pickImage}>
+          <Text style={styles.imageButtonText}>
+            {image ? "Change Image" : "Add Image"}
+          </Text>
+        </TouchableOpacity>
 
-      {image && <Image source={{ uri: image }} style={styles.previewImage} />}
+        {image && <Image source={{ uri: image }} style={styles.previewImage} />}
 
-      <TouchableOpacity style={styles.postButton} onPress={handlePost}>
-        <Text style={styles.postButtonText}>Post</Text>
-      </TouchableOpacity>
-    </View>
+        <TouchableOpacity style={styles.postButton} onPress={handlePost}>
+          <Text style={styles.postButtonText}>Post</Text>
+        </TouchableOpacity>
+
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
-export default AddPost;
-
-// ---------- STYLES ----------
-
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#FFFADD",
-    padding: 20,
-  },
+  safe: { flex: 1, backgroundColor: "#FFFADD" },
+  container: { padding: 20, paddingBottom: 40 },
   title: {
     fontSize: 22,
     fontWeight: "bold",
@@ -177,6 +167,7 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 15,
     backgroundColor: "#fff",
+    color: "black",
   },
   imageButton: {
     backgroundColor: "#4682B4",
@@ -185,10 +176,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 10,
   },
-  imageButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
-  },
+  imageButtonText: { color: "#fff", fontWeight: "bold" },
   previewImage: {
     width: "100%",
     height: 200,
@@ -201,9 +189,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
   },
-  postButtonText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "bold",
-  },
+  postButtonText: { color: "#fff", fontSize: 18, fontWeight: "bold" },
 });
+
+export default AddPost;

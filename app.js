@@ -1,7 +1,8 @@
 // App.js
 import { LogBox } from 'react-native';
-
 import * as React from 'react';
+
+import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 
@@ -23,22 +24,26 @@ import CustomDrawerContent from './components/CustomDrawerContent';
 import { PostProvider } from './Context/PostContext';
 
 LogBox.ignoreAllLogs();
+
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
 
 export default function App() {
   return (
     <PostProvider>
-      <Stack.Navigator
-        initialRouteName="Login"
-        screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen name="CreateAccScreen" component={CreateAccScreen} />
-        <Stack.Screen name="Main" component={DrawerNavigator} />
-        <Stack.Screen name="AddPost" component={AddPost} />
-        <Stack.Screen name="EditPost" component={EditPostScreen} />
-        <Stack.Screen name="PostDetail" component={PostDetailScreen} />
-      </Stack.Navigator>
+      <NavigationContainer>
+        <Stack.Navigator
+          initialRouteName="Login"
+          screenOptions={{ headerShown: false }}
+        >
+          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="CreateAccScreen" component={CreateAccScreen} />
+          <Stack.Screen name="Main" component={DrawerNavigator} />
+          <Stack.Screen name="AddPost" component={AddPost} />
+          <Stack.Screen name="EditPost" component={EditPostScreen} />
+          <Stack.Screen name="PostDetail" component={PostDetailScreen} />
+        </Stack.Navigator>
+      </NavigationContainer>
     </PostProvider>
   );
 }
@@ -48,9 +53,10 @@ function DrawerNavigator() {
     <Drawer.Navigator
       initialRouteName="Dashboard"
       drawerContent={(props) => <CustomDrawerContent {...props} />}
-      screenOptions={() => ({
+      screenOptions={{
         headerShown: false,
-      })}>
+      }}
+    >
       <Drawer.Screen name="Profile" component={Profile} />
       <Drawer.Screen name="Dashboard" component={Dashboard} />
       <Drawer.Screen name="Details" component={Details} />

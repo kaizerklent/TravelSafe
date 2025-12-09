@@ -4,45 +4,58 @@
     "slug": "ADV104_Pro",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./app/assets/images/Logo.png",
+    "icon": "./assets/images/Logo1.png",
+
     "scheme": "adv104pro",
+
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "platforms": ["android"],
+
     "ios": {
       "supportsTablet": true
     },
+
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./app/assets/images/Logo.png",
-        "backgroundImage": "./app/assets/images/Logo.png",
-        "monochromeImage": "./app/assets/images/Logo.png"
+        "backgroundColor": "#FFFADD",
+        "foregroundImage": "./assets/images/Logo1.png",
+        "backgroundImage": "./assets/images/Logo1.png",
+        "monochromeImage": "./assets/images/Logo1.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.kaizerklent.ADV104_Pro"
     },
+
     "web": {
-      "output": "static",
-      "favicon": "./app/assets/images/Logo.png"
+      "output": "single",
+      "favicon": "./assets/images/Logo.png"
     },
+
     "plugins": [
-      "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/images/Logo1.png",
           "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
-          "dark": {
-            "backgroundColor": "#000000"
-          }
+          "resizeMode": "cover",
+          "backgroundColor": "#FFFADD"
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
+
     "experiments": {
-      "typedRoutes": true,
+      "router": false,
+      "typedRoutes": false,
       "reactCompiler": true
+    },
+
+    "extra": {
+      "eas": {
+        "projectId": "da0a0159-c19c-4fdf-9cf5-565ef1922d85"
+      }
     }
   }
 }
